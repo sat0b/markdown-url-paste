@@ -1,6 +1,12 @@
 from bs4 import BeautifulSoup
 import requests
 import neovim
+import re
+
+
+def escape_markdown(text):
+    pattern = r'([\\`*_{}[\]()#+\-.!])'
+    return re.sub(pattern, r'\\\1', text)
 
 
 @neovim.plugin
@@ -13,8 +19,8 @@ class MarkdownUrlVim:
         url = self.nvim.call("getreg", "*")
         try:
             res = requests.get(url)
-            soup = BeautifulSoup(res.content)
-            title = soup.title.text
+            soup = BeautifulSoup(res.content, from_encoding=res.encoding)
+            title = escape_markdown(soup.title.text)
             markdown_str = f"[{title}]({url})"
             self.nvim.feedkeys("i" + markdown_str + self.nvim.replace_termcodes("<esc>"))
         except requests.RequestException:
